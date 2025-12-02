@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C.A.S.E.S. | Cost of Poor Quality (COPQ) Calculator v2.0</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --primary-color: #005a9e;
+            --secondary-color: #e8491d;
+            --success-color: #28a745;
+            --label-color: #555;
+            --border-color: #dee2e6;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            padding: 30px;
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        h1 {
+            margin-top: 0;
+        }
+        h2 {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 600px) {
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--label-color);
+            font-size: 0.9em;
+        }
+
+        .form-group input, .form-group select {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1em;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 90, 158, 0.2);
+        }
+        
+        .input-prefix {
+            position: relative;
+        }
+        
+        .input-prefix::before {
+            content: '$';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+        }
+        
+        .input-prefix input {
+            padding-left: 28px;
+        }
+
+        .calculate-button {
+            grid-column: 1 / -1;
+            padding: 15px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .calculate-button:hover {
+            background-color: #c33a10;
+        }
+
+        #results {
+            margin-top: 30px;
+            background-color: #f8f9fa;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.1em;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-item span:first-child {
+            color: var(--label-color);
+        }
+        .result-item span:last-child {
+            font-weight: bold;
+        }
+
+        #total-copq {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--secondary-color);
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>C.A.S.E.S. COPQ Calculator v2.0</h1>
+        <p style="text-align:center; color: #666;">Use this tool to quantify the financial impact of each customer complaint.</p>
+
+        <form id="copq-form">
+            <!-- Part 1: Complaint Identification -->
+            <h2>1. Complaint Details</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="case-id">CASE ID</label>
+                    <input type="text" id="case-id" placeholder="e.g., CASE-12345">
+                </div>
+                <div class="form-group">
+                    <label for="customer-name">Customer Name</label>
+                    <input type="text" id="customer-name" placeholder="e.g., Acme Corp">
+                </div>
+                <div class="form-group full-width">
+                    <label for="complaint-category">Complaint Category</label>
+                    <select id="complaint-category">
+                        <option value="">-- Select a Category --</option>
+                        <optgroup label="Product & Order Fulfillment">
+                            <option value="Wrong Item Shipped">Wrong Item Shipped</option>
+                            <option value="Damaged Product">Damaged Product</option>
+                            <option value="Quality Issue">Quality Issue</option>
+                            <option value="Damaged Shipment">Damaged Shipment / Lost Components</option>
+                            <option value="Partial Shipment">Partial Shipment</option>
+                            <option value="Packaging Issues">Packaging Issues</option>
+                            <option value="Made-to-Print Part">Made-to-Print Part Issue</option>
+                        </optgroup>
+                        <optgroup label="Inventory & Data">
+                            <option value="Out of Stock">Out of Stock</option>
+                            <option value="Back Order">Back Order Delay</option>
+                            <option value="Sku Error">Internal SKU Error</option>
+                            <option value="Order Entry Error">Order Entry Error</option>
+                        </optgroup>
+                        <optgroup label="Logistics">
+                            <option value="Late Delivery">Late Delivery</option>
+                        </optgroup>
+                        <optgroup label="Service & Communication">
+                            <option value="No Response">No Response to Inquiry</option>
+                            <option value="Incorrect Info Provided">Incorrect Info Provided</option>
+                            <option value="Delayed Follow Up">Delayed Follow Up</option>
+                            <option value="Unresolved Issue">Issue Remains Unresolved</option>
+                        </optgroup>
+                        <optgroup label="Financial">
+                            <option value="Invoice Error">Invoice Error</option>
+                            <option value="Pricing Discrepency">Pricing Discrepancy</option>
+                            <option value="Credit/Refund Request">Credit/Refund Request</option>
+                            <option value="Overcharge/Undercharge">Overcharge/Undercharge</option>
+                            <option value="Payment Terms Issue">Payment Terms Issue</option>
+                        </optgroup>
+                        <optgroup label="Systems & Process">
+                            <option value="Website Issue">Website Issue</option>
+                            <option value="ERP / Order System Error">ERP / Order System Error</option>
+                            <option value="EDI / Integration Issue">EDI / Integration Issue</option>
+                            <option value="Automation Error">Automation Error</option>
+                            <option value="Scanner Issue">Warehouse Scanner Issue</option>
+                            <option value="Process Gap">Internal Process Gap</option>
+                            <option value="Policy Confusion/Dissatisfaction">Policy Confusion/Dissatisfaction</option>
+                        </optgroup>
+                        <optgroup label="Other">
+                             <option value="Customer Request/Feedback">Customer Request/Feedback (Non-Complaint)</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Part 2: Cost Inputs -->
+            <div id="cost-inputs-section" class="hidden">
+                <h2>2. Cost Inputs</h2>
+                <div class="form-grid">
+                    <!-- Material Costs -->
+                    <div id="group-replacement-cost" class="form-group hidden">
+                        <label for="replacement-cost">Cost of Replacement Product</label>
+                        <div class="input-prefix"><input type="number" id="replacement-cost" placeholder="0.00" step="0.01" min="0"></div>
+                    </div>
+                    <div id="group-scrap-value" class="form-group hidden">
+                        <label for="scrap-value">Value of Scrapped/Returned Product</label>
+                        <div class="input-prefix"><input type="number" id="scrap-value" placeholder="0.00" step="0.01" min="0"></div>
+                    </div>
+                    <!-- Logistics Costs -->
+                    <div id="group-reship-cost" class="form-group hidden">
+                        <label for="reship-cost">Cost to Ship Replacement</label>
+                        <div class="input-prefix"><input type="number" id="reship-cost" placeholder="0.00" step="0.01" min="0"></div>
+                    </div>
+                    <div id="group-return-shipping" class="form-group hidden">
+                        <label for="return-shipping">Cost of Return Shipping Label</label>
+                        <div class="input-prefix"><input type="number" id="return-shipping" placeholder="0.00" step="0.01" min="0"></div>
+                    </div>
+                    <!-- Labor Costs (NEW STRUCTURE) -->
+                    <div id="group-investigation-labor" class="form-group hidden">
+                        <label for="investigation-hours">Admin/Investigation Hours</label>
+                        <input type="number" id="investigation-hours" placeholder="e.g., 1.5" step="0.1" min="0">
+                    </div>
+                    <div id="group-investigation-rate" class="form-group hidden">
+                        <label for="investigation-rate">Avg. Admin Hourly Rate</label>
+                        <div class="input-prefix"><input type="number" id="investigation-rate" placeholder="e.g., 25.00" step="0.01" min="0"></div>
+                    </div>
+                    <div id="group-reprocessing-labor" class="form-group hidden">
+                        <label for="reprocessing-hours">Warehouse Re-Processing Hours</label>
+                        <input type="number" id="reprocessing-hours" placeholder="e.g., 0.5" step="0.1" min="0">
+                    </div>
+                    <div id="group-reprocessing-rate" class="form-group hidden">
+                        <label for="reprocessing-rate">Avg. Warehouse Hourly Rate</label>
+                        <div class="input-prefix"><input type="number" id="reprocessing-rate" placeholder="e.g., 20.00" step="0.01" min="0"></div>
+                    </div>
+                    <!-- Goodwill Costs -->
+                    <div id="group-goodwill-credit" class="form-group hidden">
+                        <label for="goodwill-credit">Goodwill Credit / Discount Given</label>
+                        <div class="input-prefix"><input type="number" id="goodwill-credit" placeholder="0.00" step="0.01" min="0"></div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="calculate-button hidden">Calculate Total COPQ</button>
+        </form>
+
+        <!-- Part 3: Results -->
+        <div id="results" class="hidden">
+            <h2>3. Results Summary</h2>
+            <div class="result-item">
+                <span>Material Costs:</span>
+                <span id="result-material">$0.00</span>
+            </div>
+            <div class="result-item">
+                <span>Logistics Costs:</span>
+                <span id="result-logistics">$0.00</span>
+            </div>
+            <div class="result-item">
+                <span>Labor Costs:</span>
+                <span id="result-labor">$0.00</span>
+            </div>
+            <div class="result-item">
+                <span>Goodwill Costs:</span>
+                <span id="result-goodwill">$0.00</span>
+            </div>
+            <p id="total-copq">$0.00</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('copq-form');
+            const categorySelect = document.getElementById('complaint-category');
+            const costInputsSection = document.getElementById('cost-inputs-section');
+            const calculateButton = document.querySelector('.calculate-button');
+            const resultsSection = document.getElementById('results');
+
+            // Define which cost groups are relevant for each complaint category
+            const categoryCostMapping = {
+                // Physical product/order issues - All costs are relevant
+                'Wrong Item Shipped': ['all'],
+                'Damaged Product': ['all'],
+                'Quality Issue': ['all'],
+                'Damaged Shipment': ['all'],
+                'Partial Shipment': ['replacement-cost', 'reship-cost', 'investigation-labor', 'investigation-rate', 'reprocessing-labor', 'reprocessing-rate', 'goodwill-credit'],
+                'Packaging Issues': ['investigation-labor', 'investigation-rate', 'goodwill-credit'],
+                'Made-to-Print Part': ['all'],
+                
+                // Data/Inventory issues - Often lead to physical product issues
+                'Out of Stock': ['investigation-labor', 'investigation-rate', 'goodwill-credit'],
+                'Back Order': ['investigation-labor', 'investigation-rate', 'goodwill-credit'],
+                'Sku Error': ['all'],
+                'Order Entry Error': ['all'],
+
+                // Logistics - No material cost, but other costs apply
+                'Late Delivery': ['investigation-labor', 'investigation-rate', 'goodwill-credit'],
+
+                // Service - Primarily labor and goodwill
+                'No Response': ['investigation-labor', 'investigation-rate', 'goodwill-credit'],
+                'Incorrect Info Provided': ['investigation-labor', 'investigation-rate', 'goodwill-credit'],
+                'Delayed Follow Up': ['investigation-labor', 'investigation-rate', 'goodwill-credit'],
+                'Unresolved Issue': ['investigation-labor', 'investigation-rate', 'goodwill-credit'],
+
+                // Financial - Primarily labor and direct financial adjustment
+                'Invoice Error': ['investigation-labor', 'investigation-rate', 'goodwill-credit'],
+                'Pricing Discrepency': ['investigation-labor', 'investigation-rate', 'goodwill-credit'],
+                'Credit/Refund Request': ['investigation-labor', 'investigation-rate', 'goodwill-credit'],
+                'Overcharge/Undercharge': ['investigation-labor', 'investigation-rate', 'goodwill-credit'],
+                'Payment Terms Issue': ['investigation-labor', 'investigation-rate'],
+
+                // Systems & Process - Costs vary
+                'Website Issue': ['investigation-labor', 'investigation-rate', 'goodwill-credit'],
+                'ERP / Order System Error': ['investigation-labor', 'investigation-rate', 'goodwill-credit'],
+                'EDI / Integration Issue': ['investigation-labor', 'investigation-rate', 'goodwill-credit'],
+                'Automation Error': ['investigation-labor', 'investigation-rate', 'goodwill-credit'],
+                'Scanner Issue': ['investigation-labor', 'investigation-rate', 'reprocessing-labor', 'reprocessing-rate'],
+                'Process Gap': ['investigation-labor', 'investigation-rate'],
+                'Policy Confusion/Dissatisfaction': ['investigation-labor', 'investigation-rate'],
+                
+                // Other
+                'Customer Request/Feedback': [] // No cost for feedback
+            };
+            
+            const allCostGroups = [
+                'group-replacement-cost', 'group-scrap-value', 'group-reship-cost', 
+                'group-return-shipping', 'group-investigation-labor', 'group-investigation-rate', 'group-reprocessing-labor', 
+                'group-reprocessing-rate', 'group-goodwill-credit'
+            ];
+
+            // Event listener for category change
+            categorySelect.addEventListener('change', (e) => {
+                const selectedCategory = e.target.value;
+                updateFormVisibility(selectedCategory);
+            });
+
+            function updateFormVisibility(category) {
+                // Hide everything initially
+                costInputsSection.classList.add('hidden');
+                calculateButton.classList.add('hidden');
+                resultsSection.classList.add('hidden');
+                allCostGroups.forEach(id => document.getElementById(id).classList.add('hidden'));
+
+                if (!category) return; // Do nothing if no category is selected
+
+                // Show the cost input section and button
+                costInputsSection.classList.remove('hidden');
+                calculateButton.classList.remove('hidden');
+
+                const relevantCosts = categoryCostMapping[category] || [];
+
+                if (relevantCosts.includes('all')) {
+                    // Show all cost groups
+                    allCostGroups.forEach(id => document.getElementById(id).classList.remove('hidden'));
+                } else {
+                    // Show only specific cost groups
+                    relevantCosts.forEach(cost => {
+                        const groupId = `group-${cost}`;
+                        const element = document.getElementById(groupId);
+                        if(element) element.classList.remove('hidden');
+                    });
+                }
+            }
+            
+            // Event listener for form submission
+            form.addEventListener('submit', (e) => {
+                e.preventDefault(); // Prevent page reload
+                calculateCopq();
+            });
+
+            function getVal(id) {
+                const element = document.getElementById(id);
+                // Check if the parent group is hidden. If so, return 0.
+                if (element && element.closest('.form-group.hidden')) {
+                    return 0;
+                }
+                return parseFloat(element.value) || 0;
+            }
+            
+            function formatCurrency(value) {
+                return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+            }
+
+            function calculateCopq() {
+                // Get values from material, logistics, and goodwill inputs
+                const replacementCost = getVal('replacement-cost');
+                const scrapValue = getVal('scrap-value');
+                const reshipCost = getVal('reship-cost');
+                const returnShipping = getVal('return-shipping');
+                const goodwillCredit = getVal('goodwill-credit');
+
+                // Get values from NEW labor inputs
+                const investigationHours = getVal('investigation-hours');
+                const investigationRate = getVal('investigation-rate');
+                const reprocessingHours = getVal('reprocessing-hours');
+                const reprocessingRate = getVal('reprocessing-rate');
+
+                // Calculate sub-totals
+                const materialTotal = replacementCost + scrapValue;
+                const logisticsTotal = reshipCost + returnShipping;
+                const laborTotal = (investigationHours * investigationRate) + (reprocessingHours * reprocessingRate);
+                const goodwillTotal = goodwillCredit;
+
+                // Calculate grand total
+                const totalCopq = materialTotal + logisticsTotal + laborTotal + goodwillTotal;
+
+                // Display results
+                document.getElementById('result-material').textContent = formatCurrency(materialTotal);
+                document.getElementById('result-logistics').textContent = formatCurrency(logisticsTotal);
+                document.getElementById('result-labor').textContent = formatCurrency(laborTotal);
+                document.getElementById('result-goodwill').textContent = formatCurrency(goodwillTotal);
+                document.getElementById('total-copq').textContent = formatCurrency(totalCopq);
+                
+                resultsSection.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
